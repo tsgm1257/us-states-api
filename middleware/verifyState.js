@@ -1,15 +1,20 @@
-const statesData = require('../models/statesData.json');
+const statesData = require("../models/statesData.json");
 
 const verifyState = (req, res, next) => {
-  const code = req.params.state?.toUpperCase();
-  const valid = statesData.find(state => state.code === code);
-
-  if (!valid) {
-    return res.status(404).json({ error: 'Invalid state abbreviation parameter' });
+  const param = req.params.state;
+  if (!param) {
+    return res.status(400).json({ message: "Invalid state abbreviation parameter" });
   }
 
-  req.stateCode = code;
-  req.stateData = valid;
+  const stateCode = param.toUpperCase();
+  const found = statesData.find((state) => state.code === stateCode);
+
+  if (!found) {
+    return res.status(400).json({ message: "Invalid state abbreviation parameter" });
+  }
+
+  req.stateCode = stateCode;
+  req.stateData = found;
   next();
 };
 

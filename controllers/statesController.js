@@ -1,6 +1,7 @@
 const State = require("../models/State");
 const statesData = require("../models/statesData.json");
 
+// GET /states/?contig=true|false
 const getAllStates = async (req, res) => {
   const contig = req.query.contig;
   let results = statesData;
@@ -20,6 +21,7 @@ const getAllStates = async (req, res) => {
   res.json(merged);
 };
 
+// GET /states/:state
 const getState = async (req, res) => {
   const { stateCode, stateData } = req;
   const match = await State.findOne({ stateCode });
@@ -29,6 +31,7 @@ const getState = async (req, res) => {
   res.json(stateData);
 };
 
+// GET /states/:state/funfact
 const getFunFact = async (req, res) => {
   const { stateCode, stateData } = req;
   const match = await State.findOne({ stateCode });
@@ -43,14 +46,19 @@ const getFunFact = async (req, res) => {
   res.json({ funfact: random });
 };
 
+// POST /states/:state/funfact
 const addFunFacts = async (req, res) => {
   const { funfacts } = req.body;
-  const { stateCode, stateData } = req;
+  const { stateCode } = req;
 
-  if (!funfacts || !Array.isArray(funfacts)) {
+  if (!funfacts) {
+    return res.status(400).json({ message: "State fun facts value required" });
+  }
+
+  if (!Array.isArray(funfacts)) {
     return res
       .status(400)
-      .json({ message: "State fun facts value required and must be an array" });
+      .json({ message: "State fun facts value must be an array" });
   }
 
   const state = await State.findOneAndUpdate(
@@ -62,23 +70,26 @@ const addFunFacts = async (req, res) => {
   res.json(state);
 };
 
+// PATCH /states/:state/funfact
 const updateFunFact = async (req, res) => {
   const { index, funfact } = req.body;
   const { stateCode, stateData } = req;
 
-  if (!index || !funfact) {
+  if (!index) {
     return res
       .status(400)
-      .json({ message: "State fun fact index and value required" });
+      .json({ message: "State fun fact index value required" });
+  }
+
+  if (!funfact || typeof funfact !== "string") {
+    return res.status(400).json({ message: "State fun fact value required" });
   }
 
   const state = await State.findOne({ stateCode });
   if (!state || !state.funfacts || index < 1 || index > state.funfacts.length) {
-    return res
-      .status(404)
-      .json({
-        message: `No Fun Fact found at that index for ${stateData.state}`,
-      });
+    return res.status(404).json({
+      message: `No Fun Fact found at that index for ${stateData.state}`,
+    });
   }
 
   state.funfacts[index - 1] = funfact;
@@ -86,6 +97,7 @@ const updateFunFact = async (req, res) => {
   res.json(state);
 };
 
+// DELETE /states/:state/funfact
 const deleteFunFact = async (req, res) => {
   const { index } = req.body;
   const { stateCode, stateData } = req;
@@ -98,11 +110,9 @@ const deleteFunFact = async (req, res) => {
 
   const state = await State.findOne({ stateCode });
   if (!state || !state.funfacts || index < 1 || index > state.funfacts.length) {
-    return res
-      .status(404)
-      .json({
-        message: `No Fun Fact found at that index for ${stateData.state}`,
-      });
+    return res.status(404).json({
+      message: `No Fun Fact found at that index for ${stateData.state}`,
+    });
   }
 
   state.funfacts.splice(index - 1, 1);
@@ -110,23 +120,26 @@ const deleteFunFact = async (req, res) => {
   res.json(state);
 };
 
-// NEW CONTROLLER FUNCTIONS
-
+// GET /states/:state/capital
 const getCapital = (req, res) => {
   const { stateData } = req;
   res.json({ state: stateData.state, capital: stateData.capital_city });
 };
 
+// GET /states/:state/nickname
 const getNickname = (req, res) => {
   const { stateData } = req;
   res.json({ state: stateData.state, nickname: stateData.nickname });
 };
 
+// GET /states/:state/population
 const getPopulation = (req, res) => {
   const { stateData } = req;
-  res.json({ state: stateData.state, population: stateData.population });
+  const formatted = Number(stateData.population).toLocaleString("en-US");
+  res.json({ state: stateData.state, population: formatted });
 };
 
+// GET /states/:state/admission
 const getAdmission = (req, res) => {
   const { stateData } = req;
   res.json({ state: stateData.state, admitted: stateData.admission_date });
@@ -142,5 +155,5 @@ module.exports = {
   getCapital,
   getNickname,
   getPopulation,
-  getAdmission
+  getAdmission,
 };
